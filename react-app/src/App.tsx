@@ -37,19 +37,28 @@ function App() {
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<Partial<Person>>({});
   const [deleting, setDeleting] = useState<Person | null>(null);
-    const [issueDate, setIssueDate] = useState<string>('');
-    const [expiryDate, setExpiryDate] = useState<string>('');
+  const [issueDate, setIssueDate] = useState<string>('');
+  const [expiryDate, setExpiryDate] = useState<string>('');
   const [showDetails, setShowDetails] = useState(false);
 
-    const expiryInfo = useMemo(() => {
-      if (!expiryDate) return null;
-      const today = new Date(); today.setHours(0,0,0,0);
-      const exp = new Date(expiryDate); exp.setHours(0,0,0,0);
-      const diff = Math.round((exp.getTime() - today.getTime()) / 86400000);
-      if (diff < 0) return { text: `Atentie: CI expirata de ${Math.abs(diff)} zile`, cls: 'warning' };
-      if (diff <= 30) return { text: `Expira in ${diff} zile`, cls: 'warning' };
-      return { text: `Valida pana la ${expiryDate}`, cls: 'success' };
-    }, [expiryDate]);
+  const selectedExpiryExpired = useMemo(() => {
+    if (!selected?.id_expiry_date) return false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const exp = new Date(selected.id_expiry_date);
+    exp.setHours(0, 0, 0, 0);
+    return exp < today;
+  }, [selected?.id_expiry_date]);
+
+  const expiryInfo = useMemo(() => {
+    if (!expiryDate) return null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const exp = new Date(expiryDate); exp.setHours(0, 0, 0, 0);
+    const diff = Math.round((exp.getTime() - today.getTime()) / 86400000);
+    if (diff < 0) return { text: `Atentie: CI expirata de ${Math.abs(diff)} zile`, cls: 'warning' };
+    if (diff <= 30) return { text: `Expira in ${diff} zile`, cls: 'warning' };
+    return { text: `Valida pana la ${expiryDate}`, cls: 'success' };
+  }, [expiryDate]);
 
   const sentence = useMemo(() => {
     const p = selected;
@@ -127,7 +136,7 @@ function App() {
     }
     // normalize series upper-case
     // Real-time/submit validation for expiration
-    const today = new Date(); today.setHours(0,0,0,0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     const exp = expiryDate ? new Date(expiryDate) : null;
     const iss = issueDate ? new Date(issueDate) : null;
     if (exp && exp < today) {
@@ -248,29 +257,69 @@ function App() {
             {error && <div className="error">{error}</div>}
             <form onSubmit={submitForm}>
               <div className="grid">
-                <input name="last_name" defaultValue={formData.last_name || ''} placeholder="Nume" required />
-                <input name="first_name" defaultValue={formData.first_name || ''} placeholder="Prenume" required />
-                <input name="birth_date" defaultValue={formData.birth_date || ''} placeholder="Data nasterii" type="date" required />
-                <input name="national_id" defaultValue={formData.national_id || ''} placeholder="CNP" inputMode="numeric" pattern="^[0-9]{13}$" maxLength={13} required />
-                <input name="cin_series" defaultValue={formData.cin_series || ''} placeholder="Seria CI" pattern="^[A-Za-z]{1,2}$" maxLength={2} required />
-                <input name="cin_number" defaultValue={formData.cin_number || ''} placeholder="Numar CI" inputMode="numeric" pattern="^[0-9]{1,6}$" maxLength={6} required />
-                <input name="id_issue_date" value={issueDate} onChange={(e)=>setIssueDate(e.target.value)} placeholder="Data emitere CI" type="date" />
-                <input name="id_expiry_date" value={expiryDate} onChange={(e)=>setExpiryDate(e.target.value)} placeholder="Data expirare CI" type="date" />
-                                {expiryInfo && (
-                                  <div className={expiryInfo.cls}>{expiryInfo.text}</div>
-                                )}
-                              <div className={(selected?.id_expiry_date && (new Date(selected.id_expiry_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0))) ? 'warning' : ''}>
-                                <strong>Expira la:</strong> {selected?.id_expiry_date || '-'}{selected?.id_expiry_date && (new Date(selected.id_expiry_date).setHours(0,0,0,0) < new Date().setHours(0,0,0,0)) ? ' (expirata)' : ''}
-                              </div>
-                <input name="city" defaultValue={formData.city || ''} placeholder="Oras" required />
-                <input name="address" defaultValue={formData.address || ''} placeholder="Adresa" required />
-                <input name="county" defaultValue={formData.county || ''} placeholder="Judet" required />
-                <input name="email" defaultValue={formData.email || ''} placeholder="Email" type="email" />
-                <input name="phone" defaultValue={formData.phone || ''} placeholder="Telefon" />
-                <input name="notes" defaultValue={formData.notes || ''} placeholder="Note" />
-                <input name="id_photo" type="file" accept="image/*" />
+                <div className="field">
+                  <input name="last_name" defaultValue={formData.last_name || ''} placeholder="Nume" required />
+                </div>
+                <div className="field">
+                  <input name="first_name" defaultValue={formData.first_name || ''} placeholder="Prenume" required />
+                </div>
+
+                <div className="field">
+                  <input name="email" defaultValue={formData.email || ''} placeholder="Email" type="email" />
+                </div>
+
+
+
+                <div className="field">
+                  <input name="national_id" defaultValue={formData.national_id || ''} placeholder="CNP" inputMode="numeric" pattern="^[0-9]{13}$" maxLength={13} required />
+                </div>
+                <div className="field">
+                  <input name="cin_series" defaultValue={formData.cin_series || ''} placeholder="Seria CI" pattern="^[A-Za-z]{1,2}$" maxLength={2} required />
+                </div>
+                <div className="field">
+                  <input name="cin_number" defaultValue={formData.cin_number || ''} placeholder="Numar CI" inputMode="numeric" pattern="^[0-9]{1,6}$" maxLength={6} required />
+                </div>
+
+                <div className="field">
+                  <span className="field-label">Data nasterii</span>
+                  <input name="birth_date" defaultValue={formData.birth_date || ''} placeholder="Data nasterii" type="date" required />
+                </div>
+
+
+                <div className="field">
+                  <span className="field-label">Data emitere CI</span>
+                  <input name="id_issue_date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} placeholder="Data emitere" type="date" />
+                </div>
+
+                <div className="field">
+                  <span className="field-label">Data expirare CI</span>
+                  <input name="id_expiry_date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} placeholder="Data expirare" type="date" />
+                  {expiryInfo && (
+                    <div className={`pill ${expiryInfo.cls}`}>{expiryInfo.text}</div>
+                  )}
+                </div>
+
+                <div className="field">
+                  <input name="city" defaultValue={formData.city || ''} placeholder="Oras" required />
+                </div>
+                <div className="field">
+                  <input name="address" defaultValue={formData.address || ''} placeholder="Adresa" required />
+                </div>
+                <div className="field">
+                  <input name="county" defaultValue={formData.county || ''} placeholder="Judet" required />
+                </div>
+
+                <div className="field">
+                  <input name="phone" defaultValue={formData.phone || ''} placeholder="Telefon" />
+                </div>
+                <div className="field">
+                  <input name="notes" defaultValue={formData.notes || ''} placeholder="Note" />
+                </div>
+                <div className="field">
+                  <input name="id_photo" type="file" accept="image/*" />
+                </div>
               </div>
-              {(expiryDate && (new Date(expiryDate).setHours(0,0,0,0) < new Date().setHours(0,0,0,0))) && (
+              {(expiryDate && (new Date(expiryDate).setHours(0, 0, 0, 0) < new Date().setHours(0, 0, 0, 0))) && (
                 <div className="warning">Atentie: CI este expirata.</div>
               )}
               <div className="modal-actions">
@@ -299,4 +348,4 @@ function App() {
 }
 
 export default App;
- 
+
